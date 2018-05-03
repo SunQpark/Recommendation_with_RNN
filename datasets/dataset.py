@@ -2,7 +2,7 @@ import sys, os
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 
 
 class RSC15Dataset(Dataset):
@@ -25,11 +25,9 @@ class RSC15Dataset(Dataset):
 
     def _one_hot(self, list_of_indices):
         seq_length = list_of_indices.shape[0]
-        result = np.zeros((self.num_items, seq_length), dtype=float)
-        result[list_of_indices, np.arange(seq_length)] = 1
+        result = np.zeros((seq_length, self.num_items), dtype=float)
+        result[np.arange(seq_length), list_of_indices] = 1
         return result
-
-
 
     def __len__(self):
         return len(self.sessions)
@@ -38,9 +36,9 @@ class RSC15Dataset(Dataset):
         return self._one_hot(self.sessions.iloc[idx])
 
 
-
 if __name__ == '__main__':
     rsc_dataset = RSC15Dataset('datasets/data/rsc15_train_full.txt')
+
 
     index = 10
     print(len(rsc_dataset))
@@ -48,6 +46,14 @@ if __name__ == '__main__':
     print(rsc_dataset[index])
     print(rsc_dataset[index].shape)
     
+
+    loader = DataLoader(rsc_dataset, batch_size=1, shuffle=True)
+
+    for i, batch in enumerate(loader):
+        if i == 0:
+            break
+
+
 
 
 
