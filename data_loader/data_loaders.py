@@ -1,47 +1,48 @@
+import sys, os
 import torch
 import numpy as np
-from torchvision import datasets, transforms
-from base import BaseDataLoader
+from torch.utils.data import DataLoader
+from torch.nn.utils.rnn import pack_sequence
+from torchvision import transforms
+# from base import BaseDataLoader
+sys.path.append("./")
+from datasets.dataset import RSC15Dataset
 
 
-class MnistDataLoader(BaseDataLoader):
+class RSC15DataLoader(DataLoader):
     def __init__(self, data_dir, batch_size, shuffle=False):
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        super(RSC15DataLoader, self).__init__(
+            RSC15Dataset(os.path.join(data_dir, 'rsc15_train_full.txt'), transforms=torch.tensor),
+            batch_size=self.batch_size,
+            shuffle=self.shuffle, 
+            collate_fn=self._collate_fn
+        )
+
+        self._n_samples = len(self.dataset)
+
+    def __len__(self):
         """
-        :param data_dir: Data directory
+        return total number of batches
         """
-        super(MnistDataLoader, self).__init__(batch_size, shuffle)
-        self.data_dir = data_dir
-        self.data_loader = torch.utils.data.DataLoader(
-            datasets.MNIST('../data', train=True, download=True,
-                           transform=transforms.Compose([
-                               transforms.ToTensor(),
-                               transforms.Normalize((0.1307,), (0.3081,))
-                           ])), batch_size=256, shuffle=False)
-        self.x = []
-        self.y = []
-        for data, target in self.data_loader:
-            self.x += [i for i in data.numpy()]
-            self.y += [i for i in target.numpy()]
-        self.x = np.array(self.x)
-        self.y = np.array(self.y)
+        return self._n_samples // self.batch_size
 
-    def __next__(self):
-        batch = super(MnistDataLoader, self).__next__()
-        batch = [np.array(sample) for sample in batch]
-        return batch
+    def _collate_fn(self, list_inputs):
+        """
+        arg: 
+            list_inputs: list of tensors containing input sequences
+        """
+        # sorting sequences by length
+        order = np.argsort([item.shape[0] for item in list_inputs])
+        list_sorted = [list_inputs[i] for i in order[::-1]]
+        return pack_sequence(list_sorted)
 
-    def _pack_data(self):
-        packed = list(zip(self.x, self.y))
-        return packed
 
-    def _unpack_data(self, packed):
-        unpacked = list(zip(*packed))
-        unpacked = [list(item) for item in unpacked]
-        return unpacked
 
-    def _update_data(self, unpacked):
-        self.x = unpacked[0]
-        self.y = unpacked[1]
+if __name__ == "__main__":
+    dl = RSC15DataLoader('datasets/data', batch_size=4, shuffle=True)
+    for batch in dl:
+        print(batch)
+        break
 
-    def _n_samples(self):
-        return len(self.x)

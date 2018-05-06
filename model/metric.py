@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def my_metric(y_input, y_target):
+def accuracy(y_input, y_target):
     assert len(y_input) == len(y_target)
     correct = 0
     for y0, y1 in zip(y_input, y_target):

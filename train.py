@@ -1,20 +1,23 @@
 import argparse
 import logging
+import torch.nn as nn
 import torch.optim as optim
-from model.model import MnistModel
-from model.loss import my_loss
-from model.metric import my_metric, my_metric2
-from data_loader import MnistDataLoader
+# from model.model import MnistModel
+# from model.loss import my_loss
+from model.metric import accuracy
+from data_loader import RSC15DataLoader
 from trainer import Trainer
 from logger import Logger
 
 logging.basicConfig(level=logging.INFO, format='')
 
-parser = argparse.ArgumentParser(description='PyTorch Template')
-parser.add_argument('-b', '--batch-size', default=32, type=int,
-                    help='mini-batch size (default: 32)')
+parser = argparse.ArgumentParser(description='pytorch implementation of GRU4REC')
+parser.add_argument('-b', '--batch-size', default=16, type=int,
+                    help='mini-batch size (default: 16)')
 parser.add_argument('-e', '--epochs', default=32, type=int,
                     help='number of total epochs (default: 32)')
+parser.add_argument('--lr', default=0.001, type=float,
+                    help='learning rate (default: 0.001)')
 parser.add_argument('--resume', default='', type=str,
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('--verbosity', default=2, type=int,
@@ -23,7 +26,7 @@ parser.add_argument('--save-dir', default='saved', type=str,
                     help='directory of saved model (default: saved)')
 parser.add_argument('--save-freq', default=1, type=int,
                     help='training checkpoint frequency (default: 1)')
-parser.add_argument('--data-dir', default='datasets', type=str,
+parser.add_argument('--data-dir', default='datasets/data', type=str,
                     help='directory of training/testing data (default: datasets)')
 parser.add_argument('--validation-split', default=0.1, type=float,
                     help='ratio of split validation data, [0.0, 1.0) (default: 0.1)')
@@ -33,20 +36,20 @@ parser.add_argument('--no-cuda', action="store_true",
 
 def main(args):
     # Model
-    model = MnistModel()
+    model = nn.GRU(input_size=6741, hidden_size=1000, num_layers=1)
     model.summary()
 
     # A logger to store training process information
     train_logger = Logger()
 
     # Specifying loss function, metric(s), and optimizer
-    loss = my_loss
-    metrics = [my_metric, my_metric2]
+    loss = nn.CrossEntropyLoss()
+    metrics = [accuracy]
     optimizer = optim.Adam(model.parameters())
 
     # Data loader and validation split
-    data_loader = MnistDataLoader(args.data_dir, args.batch_size, shuffle=True)
-    valid_data_loader = data_loader.split_validation(args.validation_split)
+    data_loader = RSC15DataLoader(args.data_dir, args.batch_size, shuffle=True)
+    # valid_data_loader = data_loader.split_validation(args.validation_split) TODO: define validation set, loader
 
     # An identifier for this training session
     training_name = type(model).__name__
@@ -54,7 +57,7 @@ def main(args):
     # Trainer instance
     trainer = Trainer(model, loss, metrics,
                       data_loader=data_loader,
-                      valid_data_loader=valid_data_loader,
+                    #   valid_data_loader=valid_data_loader,
                       optimizer=optimizer,
                       epochs=args.epochs,
                       train_logger=train_logger,
@@ -64,7 +67,7 @@ def main(args):
                       verbosity=args.verbosity,
                       training_name=training_name,
                       with_cuda=not args.no_cuda,
-                      monitor='val_my_metric',
+                      monitor='accuracy',
                       monitor_mode='max')
 
     # Start training!
