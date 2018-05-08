@@ -3,7 +3,7 @@ import logging
 import torch.nn as nn
 import torch.optim as optim
 # from model.model import MnistModel
-# from model.loss import my_loss
+from model.loss import *
 from model.metric import accuracy
 from data_loader import RSC15DataLoader
 from trainer import Trainer
@@ -37,13 +37,13 @@ parser.add_argument('--no-cuda', action="store_true",
 def main(args):
     # Model
     model = nn.GRU(input_size=6741, hidden_size=1000, num_layers=1)
-    model.summary()
+    # model.summary()
 
     # A logger to store training process information
     train_logger = Logger()
 
     # Specifying loss function, metric(s), and optimizer
-    loss = nn.CrossEntropyLoss()
+    loss = bpr_loss
     metrics = [accuracy]
     optimizer = optim.Adam(model.parameters())
 

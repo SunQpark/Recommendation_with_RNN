@@ -49,7 +49,6 @@ class RSC15Dataset(Dataset):
         return sess
 
 
-
 if __name__ == '__main__':
     rsc_dataset = RSC15Dataset('datasets/data/rsc15_train_full.txt', 
         transforms=Compose([torch.tensor]), one_hot=False)

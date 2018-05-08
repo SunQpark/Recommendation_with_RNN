@@ -3,6 +3,7 @@ import torch
 import numpy as np
 from torch.utils.data import DataLoader
 from torch.nn.utils.rnn import pack_sequence
+from torch.nn.utils.rnn import pad_packed_sequence
 from torchvision import transforms
 # from base import BaseDataLoader
 sys.path.append("./")
@@ -41,8 +42,14 @@ class RSC15DataLoader(DataLoader):
 
 
 if __name__ == "__main__":
-    dl = RSC15DataLoader('datasets/data', batch_size=4, shuffle=True)
+    dl = RSC15DataLoader('datasets/data', batch_size=32, shuffle=True)
     for batch in dl:
-        print(batch)
+        print(batch[0].shape) # data
+        print(batch[1]) # batch sizes
+
+        padded = pad_packed_sequence(batch)
+        print("\npadded")
+        print(padded[0].shape)
+        print(padded[1].shape)
         break
 
