@@ -58,7 +58,7 @@ def top1_loss(y_input, y_target, n_samp=4):
     target, _ = y_target
     batch_size = batch_sizes[0]
 
-    loss_batch = torch.zeros((batch_size, 1), dtype=torch.float64)
+    loss_batch = torch.zeros((batch_size, 1), dtype=torch.float32)
     for i in range(batch_size):
         pos_score = torch.masked_select(score, target.byte())
         for j in range(n_samp):
@@ -70,7 +70,7 @@ def top1_loss(y_input, y_target, n_samp=4):
 
             loss_batch[i] += (loss_sample + regularization) / n_samp
         
-        return torch.sum(loss_batch) / batch_size.double()
+        return torch.sum(loss_batch) / batch_size.float()
 
 
 

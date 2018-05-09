@@ -43,7 +43,7 @@ def main(args):
     train_logger = Logger()
 
     # Specifying loss function, metric(s), and optimizer
-    loss = bpr_loss
+    loss = top1_loss
     metrics = [accuracy]
     optimizer = optim.Adam(model.parameters())
 
