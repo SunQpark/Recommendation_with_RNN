@@ -2,7 +2,7 @@ import argparse
 import logging
 import torch.nn as nn
 import torch.optim as optim
-# from model.model import MnistModel
+from model.model import GRU4REC
 from model.loss import *
 from model.metric import accuracy
 from data_loader import RSC15DataLoader
@@ -36,7 +36,7 @@ parser.add_argument('--no-cuda', action="store_true",
 
 def main(args):
     # Model
-    model = nn.GRU(input_size=6741, hidden_size=1000, num_layers=1)
+    model = GRU4REC(6741, 1000, 1)
     # model.summary()
 
     # A logger to store training process information

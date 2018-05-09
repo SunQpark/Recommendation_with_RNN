@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from torch.autograd import Variable
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from base import BaseTrainer
 
 
@@ -30,6 +31,17 @@ class Trainer(BaseTrainer):
     #         data, target = data.cuda(), target.cuda()
     #     return data, target
 
+    def _sess2data_target(self, session):
+        """ method to transform packed sequence session into data and target """
+        padded_sess, lengths = pad_packed_sequence(session)
+        padded_sess = padded_sess.float()
+        padded_data = padded_sess[:-1]
+        padded_target = padded_sess[1:]
+        lengths -= 1
+        data = pack_padded_sequence(padded_data, lengths)
+        target = pack_padded_sequence(padded_target, lengths)
+        return data, target
+
     def _train_epoch(self, epoch):
         """
         Training logic for an epoch
@@ -51,20 +63,18 @@ class Trainer(BaseTrainer):
         total_loss = 0
         total_metrics = np.zeros(len(self.metrics))
         for batch_idx, session in enumerate(self.data_loader):
-            data = session[:-1]
-            target = session
-            # data, target = self._to_variable(data, target)
+            data, target = self._sess2data_target(session)
 
             self.optimizer.zero_grad()
-            output = self.model(data)
+            output, hidden = self.model(data)
             loss = self.loss(output, target)
             loss.backward()
             self.optimizer.step()
 
             for i, metric in enumerate(self.metrics):
-                y_output = output.data.cpu().numpy()
+                y_output = output[0].data.cpu().numpy()
                 y_output = np.argmax(y_output, axis=1)
-                y_target = target.data.cpu().numpy()
+                y_target = target[0].data.cpu().numpy()
                 total_metrics[i] += metric(y_output, y_target)
 
             total_loss += loss.data[0]
@@ -93,10 +103,10 @@ class Trainer(BaseTrainer):
         self.model.eval()
         total_val_loss = 0
         total_val_metrics = np.zeros(len(self.metrics))
-        for batch_idx, (data, target) in enumerate(self.valid_data_loader):
-            # data, target = self._to_variable(data, target)
+        for batch_idx, session in enumerate(self.valid_data_loader):
+            data, target = self._sess2data_target(session)
 
-            output = self.model(data)
+            output, hidden = self.model(data)
             loss = self.loss(output, target)
             total_val_loss += loss.data[0]
 
@@ -109,3 +119,4 @@ class Trainer(BaseTrainer):
         avg_val_loss = total_val_loss / len(self.valid_data_loader)
         avg_val_metrics = (total_val_metrics / len(self.valid_data_loader)).tolist()
         return {'val_loss': avg_val_loss, 'val_metrics': avg_val_metrics}
+
